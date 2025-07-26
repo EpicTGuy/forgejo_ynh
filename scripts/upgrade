@@ -1,0 +1,43 @@
+#!/bin/bash
+# Script de mise à jour Yunohost pour Forgejo
+
+set -e
+source /usr/share/yunohost/helpers
+ynh_abort_if_errors
+
+# Variables
+app=forgejo
+version=$(ynh_app_setting_get $YNH_APP_INSTANCE_NAME version)
+arch="$(uname -m)"
+
+# Détection architecture
+case "$arch" in
+    x86_64)
+        arch="amd64";;
+    aarch64)
+        arch="arm64";;
+    *)
+        ynh_die "Architecture non supportée : $arch";;
+esac
+
+ynh_print_info "Mise à jour de Forgejo vers la version $version..."
+
+# Arrêt du service
+systemctl stop forgejo
+
+# Téléchargement du nouveau binaire
+ynh_print_info "Téléchargement du nouveau binaire..."
+url="https://codeberg.org/forgejo/forgejo/releases/download/v${version}/forgejo-${version}-linux-${arch}"
+cd /opt/forgejo
+curl -L "$url" -o forgejo.new
+chmod 750 forgejo.new
+chown forgejo:forgejo forgejo.new
+
+# Remplacement du binaire
+mv forgejo forgejo.old
+mv forgejo.new forgejo
+
+# Redémarrage du service
+systemctl start forgejo
+
+ynh_print_info "Forgejo mis à jour avec succès."

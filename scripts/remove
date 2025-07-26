@@ -1,0 +1,31 @@
+#!/bin/bash
+# Script de suppression Yunohost pour Forgejo
+
+set -e
+source /usr/share/yunohost/helpers
+ynh_abort_if_errors
+
+# Variables
+app=forgejo
+
+ynh_print_info "Suppression de Forgejo..."
+
+# Arrêt et désactivation du service
+systemctl stop forgejo || true
+systemctl disable forgejo || true
+
+# Suppression du fichier de service
+rm -f /etc/systemd/system/forgejo.service
+systemctl daemon-reload
+
+# Suppression des dossiers
+rm -rf /opt/forgejo
+rm -rf /var/lib/forgejo
+rm -rf /var/log/forgejo
+rm -rf /etc/forgejo
+
+# Suppression de l'utilisateur
+userdel forgejo || true
+groupdel forgejo || true
+
+ynh_print_info "Forgejo supprimé avec succès."
