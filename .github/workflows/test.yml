@@ -1,0 +1,70 @@
+name: Test Forgejo Package
+
+on:
+  push:
+    branches: [ main, testing ]
+  pull_request:
+    branches: [ main, testing ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y shellcheck shfmt curl wget git
+        
+    - name: Run linting
+      run: |
+        cd $GITHUB_WORKSPACE
+        make lint
+        
+    - name: Check for Gitea references
+      run: |
+        cd $GITHUB_WORKSPACE
+        bash scripts/check_gitea_refs.sh
+        
+    - name: Validate manifest structure
+      run: |
+        cd $GITHUB_WORKSPACE
+        test -f manifest.json || exit 1
+        test -f scripts/install || exit 1
+        test -f scripts/remove || exit 1
+        test -f scripts/upgrade || exit 1
+        test -f conf/forgejo.service || exit 1
+        test -f conf/nginx.conf || exit 1
+        echo "✅ All essential files present"
+        
+    - name: Test script syntax
+      run: |
+        cd $GITHUB_WORKSPACE
+        for script in scripts/*; do
+          if [ -f "$script" ]; then
+            bash -n "$script" || exit 1
+          fi
+        done
+        echo "✅ All scripts have valid syntax"
+        
+    - name: Create test logs directory
+      run: |
+        mkdir -p tests/logs
+        
+    - name: Upload test logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-logs
+        path: |
+          tests/logs/
+        retention-days: 7
+        
+    - name: Check test results
+      if: failure()
+      run: |
+        echo "❌ Tests failed. Check the uploaded logs for details."
+        exit 1
