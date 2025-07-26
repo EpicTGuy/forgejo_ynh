@@ -1,0 +1,40 @@
+[Unit]
+Description=Forgejo - A self-hosted Git service
+Documentation=https://forgejo.org/docs/
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=forgejo
+Group=forgejo
+WorkingDirectory=/opt/forgejo
+ExecStart=/opt/forgejo/forgejo web
+ExecReload=/bin/kill -USR1 $MAINPID
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=forgejo
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Sécurité
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/forgejo /var/log/forgejo /opt/forgejo
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+
+# Environnement
+Environment=FORGEJO_WORK_DIR=/var/lib/forgejo
+Environment=FORGEJO_CUSTOM=/opt/forgejo/custom
+
+[Install]
+WantedBy=multi-user.target 

@@ -1,0 +1,46 @@
+#!/bin/bash
+# Script de restauration Yunohost pour Forgejo
+
+set -e
+source /usr/share/yunohost/helpers
+ynh_abort_if_errors
+
+# Variables
+app=forgejo
+backup_dir="/var/lib/forgejo"
+config_dir="/etc/forgejo"
+custom_dir="/opt/forgejo/custom"
+
+ynh_print_info "Démarrage de la restauration de Forgejo..."
+
+# Arrêt du service pendant la restauration
+ynh_print_info "Arrêt du service Forgejo..."
+systemctl stop forgejo || true
+
+# Création des dossiers si nécessaire
+install -d -o forgejo -g forgejo -m 750 "$backup_dir"
+install -d -o forgejo -g forgejo -m 750 "$config_dir"
+install -d -o forgejo -g forgejo -m 750 "$custom_dir"
+
+# Restauration des données utilisateur
+ynh_print_info "Restauration des données Forgejo..."
+ynh_restore_file "$backup_dir"
+
+# Restauration de la configuration
+ynh_print_info "Restauration de la configuration..."
+ynh_restore_file "$config_dir"
+
+# Restauration des fichiers personnalisés
+ynh_print_info "Restauration des fichiers personnalisés..."
+ynh_restore_file "$custom_dir"
+
+# Remise des permissions
+ynh_print_info "Remise des permissions..."
+chown -R forgejo:forgejo "$backup_dir" "$config_dir" "$custom_dir" || true
+chmod -R 750 "$backup_dir" "$config_dir" "$custom_dir" || true
+
+# Redémarrage du service
+ynh_print_info "Redémarrage du service Forgejo..."
+systemctl start forgejo || true
+
+ynh_print_info "Restauration de Forgejo terminée avec succès." 

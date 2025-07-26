@@ -1,0 +1,23 @@
+#!/bin/bash
+# Hook post_install pour Forgejo sur Yunohost
+# Démarre le service, applique les permissions et affiche l'URL d'accès
+
+set -e
+
+# Démarrer le service Forgejo
+systemctl start forgejo
+systemctl enable forgejo
+
+# Appliquer les permissions sur les dossiers critiques
+chown -R forgejo:forgejo /opt/forgejo /var/lib/forgejo /var/log/forgejo || true
+chmod 750 /opt/forgejo /var/lib/forgejo /var/log/forgejo || true
+
+# Récupérer le domaine et afficher l'URL d'accès
+if [ -n "$YNH_APP_INSTANCE_NAME" ]; then
+    domain=$(yunohost app setting $YNH_APP_INSTANCE_NAME domain)
+else
+    domain=$(yunohost app setting forgejo domain 2>/dev/null || echo "<votre-domaine>")
+fi
+
+# Message de succès
+ynh_print_info "\e[32m[SUCCESS]\e[0m Forgejo est installé et accessible sur : https://$domain/" 

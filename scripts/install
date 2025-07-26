@@ -1,0 +1,66 @@
+#!/bin/bash
+# Script d'installation Yunohost pour Forgejo
+
+# Arrêt immédiat en cas d'erreur
+set -e
+source /usr/share/yunohost/helpers
+ynh_abort_if_errors
+
+# Variables
+app=forgejo
+pkg_dir="$(cd "$(dirname "$0")/.."; pwd)"
+conf_src="$pkg_dir/conf/forgejo.conf"
+conf_dst="/etc/forgejo/app.ini"
+service_file="$pkg_dir/conf/forgejo.service"
+version=$(ynh_app_setting_get $YNH_APP_INSTANCE_NAME version)
+arch="$(uname -m)"
+
+# Détection architecture
+case "$arch" in
+    x86_64)
+        arch="amd64";;
+    aarch64)
+        arch="arm64";;
+    *)
+        ynh_die "Architecture non supportée : $arch";;
+esac
+
+# Préparation des dossiers
+ynh_print_info "Création des dossiers nécessaires..."
+install -d -o root -g root -m 755 /opt/forgejo
+install -d -o forgejo -g forgejo -m 750 /var/lib/forgejo
+install -d -o forgejo -g forgejo -m 750 /var/log/forgejo
+
+# Création de l'utilisateur et groupe forgejo
+if ! id forgejo >/dev/null 2>&1; then
+    ynh_print_info "Création de l'utilisateur système forgejo..."
+    useradd -r -d /var/lib/forgejo -s /usr/sbin/nologin forgejo
+fi
+
+# Téléchargement du binaire
+ynh_print_info "Téléchargement du binaire Forgejo..."
+url="https://codeberg.org/forgejo/forgejo/releases/download/v${version}/forgejo-${version}-linux-${arch}"
+cd /opt/forgejo
+curl -L "$url" -o forgejo
+chmod 750 forgejo
+chown forgejo:forgejo forgejo
+
+# (Optionnel) Vérification du checksum si disponible
+if [ -n "$YNH_APP_CHECKSUM" ]; then
+    ynh_print_info "Vérification du checksum..."
+    echo "$YNH_APP_CHECKSUM  forgejo" | sha256sum -c -
+fi
+
+# Déploiement de la configuration
+ynh_print_info "Déploiement de la configuration Forgejo..."
+install -D -o forgejo -g forgejo -m 640 "$conf_src" "$conf_dst"
+
+# Déploiement du service systemd
+ynh_print_info "Déploiement du service systemd..."
+install -D -o root -g root -m 644 "$service_file" "/etc/systemd/system/forgejo.service"
+
+# Rechargement systemd et activation du service (sans démarrage)
+systemctl daemon-reload
+systemctl enable forgejo
+
+ynh_print_info "Installation de Forgejo terminée. Le service sera démarré en post_install." 

@@ -1,0 +1,59 @@
+name: CI Forgejo YunoHost
+
+on:
+  push:
+    branches: [ main, testing ]
+  pull_request:
+    branches: [ main, testing ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup YunoHost
+      uses: yanhdev/setup-yunohost-action@v1
+      with:
+        version: '4.5'
+        
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y shellcheck shfmt curl wget
+        
+    - name: Setup test environment
+      run: |
+        # Créer un domaine de test
+        sudo yunohost domain add test-forgejo.local
+        # Créer un utilisateur de test
+        sudo yunohost user create testuser --firstname Test --lastname User --mail testuser@test-forgejo.local --password testpass123
+        
+    - name: Run linting
+      run: |
+        cd $GITHUB_WORKSPACE
+        make lint
+        
+    - name: Run tests
+      run: |
+        cd $GITHUB_WORKSPACE
+        make test
+      continue-on-error: true
+        
+    - name: Upload test logs
+      if: failure() || always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-logs
+        path: |
+          tests/logs/
+          /var/log/yunohost/
+        retention-days: 7
+        
+    - name: Check test results
+      if: failure()
+      run: |
+        echo "❌ Tests failed. Check the uploaded logs for details."
+        exit 1 

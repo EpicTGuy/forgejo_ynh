@@ -1,0 +1,42 @@
+#!/bin/bash
+# Script de sauvegarde Yunohost pour Forgejo
+
+set -e
+source /usr/share/yunohost/helpers
+ynh_abort_if_errors
+
+# Variables
+app=forgejo
+backup_dir="/var/lib/forgejo"
+config_dir="/etc/forgejo"
+custom_dir="/opt/forgejo/custom"
+
+ynh_print_info "Démarrage de la sauvegarde de Forgejo..."
+
+# Arrêt du service pendant la sauvegarde
+ynh_print_info "Arrêt du service Forgejo..."
+systemctl stop forgejo || true
+
+# Sauvegarde des données utilisateur
+if [ -d "$backup_dir" ]; then
+    ynh_print_info "Sauvegarde des données Forgejo..."
+    ynh_backup "$backup_dir"
+fi
+
+# Sauvegarde de la configuration
+if [ -d "$config_dir" ]; then
+    ynh_print_info "Sauvegarde de la configuration..."
+    ynh_backup "$config_dir"
+fi
+
+# Sauvegarde des fichiers personnalisés
+if [ -d "$custom_dir" ]; then
+    ynh_print_info "Sauvegarde des fichiers personnalisés..."
+    ynh_backup "$custom_dir"
+fi
+
+# Redémarrage du service
+ynh_print_info "Redémarrage du service Forgejo..."
+systemctl start forgejo || true
+
+ynh_print_info "Sauvegarde de Forgejo terminée avec succès." 
