@@ -1,0 +1,85 @@
+{
+  "name": "Forgejo",
+  "id": "forgejo",
+  "description": {
+    "en": "Forgejo - A self-hosted Git service",
+    "fr": "Forgejo - Un service Git auto-hébergé"
+  },
+  "version": "12.0.0",
+  "url": "https://forgejo.org/",
+  "license": "AGPL-3.0",
+  "maintainer": {
+    "name": "Forgejo Team",
+    "email": "contact@forgejo.org"
+  },
+  "requirements": {
+    "yunohost": ">= 4.0.0"
+  },
+  "multi_instance": false,
+  "services": [
+    "nginx",
+    "forgejo"
+  ],
+  "arguments": {
+    "install": [
+      {
+        "name": "domain",
+        "type": "domain",
+        "ask": {
+          "en": "Choose a domain for Forgejo",
+          "fr": "Choisissez un domaine pour Forgejo"
+        },
+        "example": "forgejo.domain.com"
+      },
+      {
+        "name": "admin",
+        "type": "user",
+        "ask": {
+          "en": "Choose the Forgejo administrator",
+          "fr": "Choisissez l'administrateur Forgejo"
+        },
+        "example": "admin"
+      },
+      {
+        "name": "is_public",
+        "type": "boolean",
+        "ask": {
+          "en": "Is it a public application?",
+          "fr": "Est-ce une application publique ?"
+        },
+        "default": true
+      }
+    ]
+  },
+  "install": {
+    "script": "scripts/install"
+  },
+  "remove": {
+    "script": "scripts/remove"
+  },
+  "upgrade": {
+    "script": "scripts/upgrade"
+  },
+  "backup": {
+    "script": "scripts/backup"
+  },
+  "restore": {
+    "script": "scripts/restore"
+  },
+  "hooks": {
+    "post_install": "hooks/post_install",
+    "post_upgrade": "hooks/post_upgrade"
+  },
+  "architectures": [
+    "amd64",
+    "arm64"
+  ],
+  "tags": [
+    "git",
+    "version-control",
+    "code-hosting",
+    "self-hosted",
+    "forgejo"
+  ],
+  "category": "development"
+}
